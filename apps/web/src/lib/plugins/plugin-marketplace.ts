@@ -4,15 +4,18 @@ import {
   type GithubAssetDownloader,
 } from "@/lib/plugins/github-plugin-distribution";
 import { isVersionOutdated } from "@/lib/version-check";
+import { resolveAppAssetUrl } from "@/lib/app-page-path";
 
-export const DEFAULT_PLUGIN_REGISTRY_URL = "/extensions/registry.json";
+export const DEFAULT_PLUGIN_REGISTRY_URL = "extensions/registry.json";
 
 export const loadPluginMarketplace = async (
   registryUrl = DEFAULT_PLUGIN_REGISTRY_URL,
-  request: typeof fetch = window.fetch.bind(window)
+  request: typeof fetch = window.fetch.bind(window),
+  baseUrl = import.meta.env.BASE_URL,
+  locationHref = window.location.href,
 ): Promise<MarketplaceRegistry> => {
-  const url = new URL(registryUrl, window.location.href);
-  const response = await request(url.href, { cache: "no-store", credentials: "omit" });
+  const url = resolveAppAssetUrl(registryUrl, baseUrl, locationHref);
+  const response = await request(url, { cache: "no-store", credentials: "omit" });
   if (!response.ok) throw new Error(`Plugin marketplace request failed with HTTP ${response.status}.`);
   return parseMarketplaceRegistry(await response.json());
 };

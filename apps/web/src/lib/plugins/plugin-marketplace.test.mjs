@@ -1,9 +1,26 @@
 import { describe, expect, test } from "bun:test";
 import { parseMarketplaceRegistry } from "@edgeever/plugin-api";
 import { sha256Hex } from "./github-plugin-distribution.ts";
-import { resolveOfficialPluginMarketplace } from "./plugin-marketplace.ts";
+import { loadPluginMarketplace, resolveOfficialPluginMarketplace } from "./plugin-marketplace.ts";
 
 describe("bundled plugin marketplace", () => {
+  test("loads the registry beside the packaged desktop renderer", async () => {
+    let requestedUrl = null;
+    const request = async (input) => {
+      requestedUrl = String(input);
+      return Response.json({ registryVersion: "1", updatedAt: "2026-09-08T00:00:00.000Z", entries: [] });
+    };
+
+    await loadPluginMarketplace(
+      "/extensions/registry.json",
+      request,
+      "./",
+      "file:///Applications/EdgeEver.app/Contents/Resources/web/index.html",
+    );
+
+    expect(requestedUrl).toBe("file:///Applications/EdgeEver.app/Contents/Resources/web/extensions/registry.json");
+  });
+
   test("keeps verified checksums aligned with bundled extension files", async () => {
     const registry = parseMarketplaceRegistry(await Bun.file(new URL("../../../public/extensions/registry.json", import.meta.url)).json());
     expect(registry.entries.map((entry) => entry.id)).not.toContain("org.edgeever.examples.recent-notes");
